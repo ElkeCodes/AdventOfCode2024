@@ -1,18 +1,20 @@
-const parseLines = (lines: Array<string>): [Array<number>, Array<number>] => {
-  let left: number[] = [];
-  let right: number[] = [];
-  lines.forEach((line) => {
-    const [leftNubmer, rightNumber] = line.split("   ");
-    left.push(parseInt(leftNubmer, 10));
-    right.push(parseInt(rightNumber, 10));
-  });
-  return [left, right];
-};
+type LeftRight = [Array<number>, Array<number>];
+
+const parseLines = (lines: Array<string>): LeftRight =>
+  lines.reduce(
+    ([left, right]: LeftRight, line): LeftRight => {
+      const [leftNumber, rightNumber] = line.split("   ");
+      left.push(parseInt(leftNumber, 10));
+      right.push(parseInt(rightNumber, 10));
+      return [left, right];
+    },
+    [[], []]
+  );
 
 export const part1 = (lines: Array<string>): number => {
   let [left, right] = parseLines(lines);
-  left = left.sort();
-  right = right.sort();
+  left.sort();
+  right.sort();
   return left.reduce((acc, n, index) => {
     return acc + Math.abs(n - right[index]);
   }, 0);
