@@ -1,6 +1,7 @@
 type Coordinate = [number, number];
 type CoordinateKey = `${number}-${number}`;
 type WordSearchMap = Map<CoordinateKey, string>;
+type MatchVectors = Array<{ [character: string]: Array<Coordinate> }>;
 
 const getKey = (x: number, y: number): CoordinateKey => `${x}-${y}`;
 const parseKey = (key: CoordinateKey): { x: number; y: number } => ({
@@ -18,6 +19,22 @@ const parseWordSearch = (lines: Array<string>): WordSearchMap => {
   return map;
 };
 
+const countMatches = (map: WordSearchMap, vectors: MatchVectors): number => {
+  let result = 0;
+  for (let key of map.keys()) {
+    const { x, y } = parseKey(key);
+    result += vectors.filter((vector) =>
+      Object.entries(vector).every(([character, coordinates]) =>
+        coordinates.every(
+          ([deltaX, deltaY]) =>
+            map.get(getKey(x + deltaX, y + deltaY)) === character
+        )
+      )
+    ).length;
+  }
+  return result;
+};
+
 export const part1 = (lines: Array<string>): number => {
   const vectors: Array<{ [character: string]: Array<Coordinate> }> = [
     { X: [[0, 0]], M: [[1, 0]], A: [[2, 0]], S: [[3, 0]] },
@@ -29,24 +46,9 @@ export const part1 = (lines: Array<string>): number => {
     { X: [[0, 0]], M: [[0, -1]], A: [[0, -2]], S: [[0, -3]] },
     { X: [[0, 0]], M: [[1, -1]], A: [[2, -2]], S: [[3, -3]] },
   ];
-  let result = 0;
+
   const map = parseWordSearch(lines);
-  for (let key of map.keys()) {
-    const { x, y } = parseKey(key);
-    vectors.forEach((vector) => {
-      if (
-        Object.entries(vector).every(([character, coordinates]) =>
-          coordinates.every(
-            ([deltaX, deltaY]) =>
-              map.get(getKey(x + deltaX, y + deltaY)) === character
-          )
-        )
-      ) {
-        result++;
-      }
-    });
-  }
-  return result;
+  return countMatches(map, vectors);
 };
 
 export const part2 = (lines: Array<string>): number => {
@@ -96,22 +98,6 @@ export const part2 = (lines: Array<string>): number => {
       ],
     },
   ];
-  let result = 0;
   const map = parseWordSearch(lines);
-  for (let key of map.keys()) {
-    const { x, y } = parseKey(key);
-    vectors.forEach((vector) => {
-      if (
-        Object.entries(vector).every(([character, coordinates]) =>
-          coordinates.every(
-            ([deltaX, deltaY]) =>
-              map.get(getKey(x + deltaX, y + deltaY)) === character
-          )
-        )
-      ) {
-        result++;
-      }
-    });
-  }
-  return result;
+  return countMatches(map, vectors);
 };
