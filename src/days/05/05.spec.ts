@@ -8,6 +8,8 @@ import {
   sortUpdate,
 } from ".";
 import data from "./05.txt?raw";
+import challenge1 from "./challenge1.txt?raw";
+import challenge2 from "./challenge2.txt?raw";
 
 describe("day 01", () => {
   describe("part 1", () => {
@@ -72,6 +74,19 @@ describe("day 01", () => {
       expect(sortUpdate([97, 13, 75, 29, 47], exampleRules)).toStrictEqual([
         97, 75, 47, 29, 13,
       ]);
+    });
+  });
+
+  // https://gathering.tweakers.net/forum/list_message/80936826#80936826
+  // thanks for the extra challenge Soultaker!
+  describe("soultaker's challenge", () => {
+    test("challenge 1", () => {
+      const lines = challenge1.split("\n");
+      expect(part1(lines) * part2(lines)).toBe(9812096);
+    });
+    test("challenge 2", () => {
+      const lines = challenge2.split("\n");
+      expect(part1(lines) * part2(lines)).toBe(6145186);
     });
   });
 });

@@ -59,6 +59,12 @@ export const grabCenter = (update: Update): number => {
   return update.at((update.length - 1) / 2)!;
 };
 
+const shuffle = (unshuffled: Array<number>): Array<number> =>
+  unshuffled
+    .map((value) => ({ value, sort: Math.random() }))
+    .sort((a, b) => a.sort - b.sort)
+    .map(({ value }) => value);
+
 export const sortUpdate = (update: Update, rules: Array<Rule>): Update => {
   let result: Update = [update.at(0)!];
   for (let pageIndex = 1; pageIndex < update.length; pageIndex++) {
@@ -77,7 +83,15 @@ export const sortUpdate = (update: Update, rules: Array<Rule>): Update => {
       result.push(page);
     }
   }
-  return result;
+
+  // for AoC, this will always be true
+  // in the case of Soultaker's challenge, it will probably fail the first time...
+  if (isCorrectlyOrdered(result, rules)) {
+    return result;
+  } else {
+    // haven't found a better solution, using a dumb shuffle works but is slow
+    return sortUpdate(shuffle(update), rules);
+  }
 };
 
 export const part1 = (lines: Array<string>): number => {
