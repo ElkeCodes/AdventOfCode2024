@@ -1,5 +1,5 @@
 import { expect, test, describe } from "vitest";
-import { findCorrectOperators, parseData, part1 } from ".";
+import { findCorrectOperators, parseData, part1, part2 } from ".";
 import data from "./07.txt?raw";
 
 describe("day 01", () => {
@@ -9,6 +9,14 @@ describe("day 01", () => {
     });
     test("example", () => {
       expect(part1(example)).toBe(3749);
+    });
+  });
+  describe("part 2", () => {
+    test("actual", () => {
+      expect(part2(data.split("\n"))).toBe(92148721834692);
+    });
+    test("example", () => {
+      expect(part2(example)).toBe(11387);
     });
   });
   describe("helpers", () => {
@@ -32,6 +40,15 @@ describe("day 01", () => {
           parts: [44, 4, 9, 8, 1, 1, 9, 9, 589, 3, 3, 1],
         })
       ).toBe(2093);
+      expect(
+        findCorrectOperators(
+          {
+            result: 7290,
+            parts: [6, 8, 6, 15],
+          },
+          true
+        )
+      ).toBe(7290);
     });
   });
 });

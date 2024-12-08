@@ -12,14 +12,16 @@ export const parseData = (lines: Array<string>): Array<Equation> =>
   });
 
 type TempPart = { partIndex: number; total: number; calc: string };
-export const findCorrectOperators = ({ result, parts }: Equation): number => {
+export const findCorrectOperators = (
+  { result, parts }: Equation,
+  useConcatenation = false
+): number => {
   let partsToDo: Array<TempPart> = [
     { partIndex: 0, total: parts[0], calc: `${parts[0]}` },
   ];
   let currentPart;
   while ((currentPart = partsToDo.pop()!)) {
     let { partIndex, total, calc } = currentPart;
-    // if (calc.startsWith(`44 * 4 + 9 * 8 * 1 * 1`)) console.log(calc, total);
     partIndex++;
     if (total === result && partIndex === parts.length) {
       return total;
@@ -35,6 +37,13 @@ export const findCorrectOperators = ({ result, parts }: Equation): number => {
         total: total + parts[partIndex],
         calc: `${calc} + ${parts[partIndex]}`,
       });
+      if (useConcatenation) {
+        partsToDo.push({
+          partIndex,
+          total: parseInt(`${total}${parts[partIndex]}`, 10),
+          calc: `${calc} || ${parts[partIndex]}`,
+        });
+      }
     }
   }
   return 0;
@@ -45,6 +54,18 @@ export const part1 = (lines: Array<string>): number => {
   let results = new Set<number>();
   equations.forEach(({ result, parts }) => {
     const tempResult = findCorrectOperators({ result, parts });
+    if (result === tempResult) {
+      results.add(result);
+    }
+  });
+  return [...results].reduce((acc, result) => acc + result, 0);
+};
+
+export const part2 = (lines: Array<string>): number => {
+  const equations = parseData(lines);
+  let results = new Set<number>();
+  equations.forEach(({ result, parts }) => {
+    const tempResult = findCorrectOperators({ result, parts }, true);
     if (result === tempResult) {
       results.add(result);
     }
