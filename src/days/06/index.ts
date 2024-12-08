@@ -6,10 +6,6 @@ type LabMap = Map<
 >;
 
 const getKey = (x: number, y: number): CoordinateKey => `${x}-${y}`;
-const parseKey = (key: CoordinateKey): { x: number; y: number } => ({
-  x: parseInt(key.split("-").at(0)!, 10),
-  y: parseInt(key.split("-").at(1)!, 10),
-});
 
 export const parseMap = (
   lines: Array<string>
@@ -27,7 +23,7 @@ export const parseMap = (
   return { map, startCoordinate };
 };
 
-function* turn(): Generator<Coordinate> {
+function* turn(): Generator<Coordinate, Coordinate> {
   while (true) {
     yield [0, -1];
     yield [1, 0];
@@ -43,15 +39,21 @@ const nextCoordinate = (
 
 export const part1 = (lines: Array<string>): number => {
   const { map, startCoordinate } = parseMap(lines);
+  letGuardFollowPath(map, startCoordinate);
+  return [...map].reduce(
+    (acc, [_, { visits }]) => (acc += visits.length > 0 ? 1 : 0),
+    0
+  );
+};
+
+const letGuardFollowPath = (
+  map: LabMap,
+  startCoordinate: Coordinate
+): boolean => {
   const directions = turn();
   let direction = directions.next().value;
   let currentCoordinate = startCoordinate;
   while (map.has(getKey(...currentCoordinate))) {
-    const previousVisit = map.get(getKey(...currentCoordinate))!;
-    map.set(getKey(...currentCoordinate), {
-      ...previousVisit,
-      visits: [direction, ...previousVisit.visits],
-    });
     let targetCoordinate = nextCoordinate(currentCoordinate, direction);
     let target = map.get(getKey(...targetCoordinate));
     if (!target) {
@@ -60,15 +62,48 @@ export const part1 = (lines: Array<string>): number => {
     if (target.obstacle) {
       direction = directions.next().value;
       continue;
+    } else {
+      const previousVisit = map.get(getKey(...targetCoordinate))!;
+      if (
+        previousVisit.visits.find(
+          ([visitX, visitY]) =>
+            visitX === direction[0] && visitY === direction[1]
+        )
+      ) {
+        return true;
+      }
+      map.set(getKey(...targetCoordinate), {
+        ...previousVisit,
+        visits: [direction, ...previousVisit.visits],
+      });
     }
+
     currentCoordinate = targetCoordinate;
   }
-  return [...map].reduce(
-    (acc, [_, { visits }]) => (acc += visits.length > 0 ? 1 : 0),
-    0
-  );
+  return false;
+};
+
+const clearVisits = (map: LabMap) => {
+  for (var [originalKey, originalValue] of map) {
+    map.set(originalKey, { ...originalValue, visits: [] });
+  }
 };
 
 export const part2 = (lines: Array<string>): number => {
-  return 2;
+  const { map, startCoordinate } = parseMap(lines);
+  letGuardFollowPath(map, startCoordinate);
+
+  let result = 0;
+  for (var [key, value] of [...map].filter(
+    ([key, { visits }]) =>
+      visits.length > 0 && getKey(...startCoordinate) !== key
+  )) {
+    clearVisits(map);
+    map.set(key, { ...value, obstacle: true });
+    if (letGuardFollowPath(map, startCoordinate)) {
+      result++;
+    }
+    map.set(key, { ...value, obstacle: false });
+  }
+  return result;
 };

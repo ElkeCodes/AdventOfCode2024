@@ -12,14 +12,14 @@ describe("day 01", () => {
     });
   });
 
-  // describe("part 2", () => {
-  //   test("actual", () => {
-  //     expect(part2(data.split("\n"))).toBe(4971);
-  //   });
-  //   test("example", () => {
-  //     expect(part2(example)).toBe(123);
-  //   });
-  // });
+  describe("part 2", () => {
+    test("actual", () => {
+      expect(part2(data.split("\n"))).toBe(1703);
+    });
+    test("example", () => {
+      expect(part2(example)).toBe(6);
+    });
+  });
 
   describe("helpers", () => {
     test("parseMap", () => {
