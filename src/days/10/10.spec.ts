@@ -1,6 +1,6 @@
 import { expect, test, describe } from "vitest";
-import { part1, part2 } from ".";
-import data from "./09.txt?raw";
+import { convertDiskMapToIndividualBlocks, part1, part2 } from ".";
+import data from "./10.txt?raw";
 
 describe("day 01", () => {
   describe("part 1", () => {
