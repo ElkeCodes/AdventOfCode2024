@@ -1,91 +1,111 @@
-export const convertDiskMapToIndividualBlocks = (
-  diskMap: string
-): { nodes: Array<string | number>; highestId: number } => {
-  let isFile = true;
-  let nodes: Array<string | number> = [];
-  let id = 0;
-  let index = 0;
-  for (let i = 0; i < diskMap.length; i++) {
-    const size = parseInt(diskMap[i], 10);
-    if (isFile) {
-      Array.from(Array(size)).forEach(() => (nodes[index++] = id));
-      id++;
-    } else {
-      Array.from(Array(size)).forEach(() => (nodes[index++] = "."));
-    }
-    isFile = !isFile;
-  }
-  return { nodes, highestId: id - 1 };
+type Coordinate = [number, number];
+type CoordinateKey = `${number}-${number}`;
+type TopoMap = Map<CoordinateKey, number>;
+const getKey = (x: number, y: number): CoordinateKey => `${x}-${y}`;
+type isInBoundsFunction = (c: Coordinate) => boolean;
+export const isInBounds = (
+  [c1X, c1Y]: Coordinate,
+  maxX: number,
+  maxY: number
+) => c1X >= 0 && c1Y >= 0 && c1X <= maxX && c1Y <= maxY;
+
+export const createIsInBoundsChecker =
+  (maxX: number, maxY: number): isInBoundsFunction =>
+  (c: Coordinate) =>
+    isInBounds(c, maxX, maxY);
+
+const createTopoMap = (
+  lines: Array<string>
+): {
+  topoMap: TopoMap;
+  lowestPoints: Array<Coordinate>;
+  isInBounds: isInBoundsFunction;
+} => {
+  let topoMap: TopoMap = new Map();
+  const lowestPoints: Array<Coordinate> = [];
+  let maxY = 0;
+  let maxX = 0;
+  lines.forEach((line, y) => {
+    line.split("").forEach((height, x) => {
+      const parsedHeight = parseInt(height, 10);
+      if (parsedHeight === 0) {
+        lowestPoints.push([x, y]);
+      }
+      topoMap.set(getKey(x, y), parsedHeight);
+      maxX = Math.max(maxX, x);
+    });
+    maxY = Math.max(maxY, y);
+  });
+  return {
+    topoMap,
+    lowestPoints,
+    isInBounds: createIsInBoundsChecker(maxX, maxY),
+  };
 };
 
-const calculateChecksum = (nodes: Array<string | number>): number =>
-  nodes.reduce((acc: number, id, index) => {
-    if (id !== ".") {
-      return acc + (id as number) * index;
-    }
-    return acc;
-  }, 0);
+const getNeighbours = (
+  [x, y]: Coordinate,
+  isInBounds: isInBoundsFunction
+): Array<Coordinate> =>
+  [
+    [x + 1, y] as Coordinate,
+    [x, y + 1] as Coordinate,
+    [x - 1, y] as Coordinate,
+    [x, y - 1] as Coordinate,
+  ].filter((x, y) => isInBounds(x, y));
 
 export const part1 = (lines: Array<string>): number => {
-  const line = lines.at(0)!;
-  const { nodes } = convertDiskMapToIndividualBlocks(line);
-  let firstFreeSpot = nodes.findIndex((node) => node === ".");
-  let lastFileIndex = nodes.findLastIndex((node) => node !== ".");
-  while (firstFreeSpot < lastFileIndex) {
-    const lastFile = nodes[lastFileIndex];
-    nodes[lastFileIndex] = ".";
-    nodes[firstFreeSpot] = lastFile;
-    firstFreeSpot = nodes.findIndex((node) => node === ".");
-    lastFileIndex = nodes.findLastIndex((node) => node !== ".");
-  }
-  return calculateChecksum(nodes);
-};
-
-const findEmptySpace = (
-  nodes: Array<string | number>,
-  fileSize: number
-): number => {
-  let index = 0;
-  let foundEmptyIndex = 0;
-  let foundEmptySize = 0;
-  while (index + fileSize < nodes.length) {
-    if (nodes[index] === ".") {
-      if (foundEmptySize === 0) {
-        foundEmptyIndex = index;
+  const { topoMap, lowestPoints, isInBounds } = createTopoMap(lines);
+  const findHowManyHighPointsReachable = (
+    startingPoint: Coordinate
+  ): number => {
+    let result: Set<CoordinateKey> = new Set();
+    const queue: Array<Coordinate> = [startingPoint];
+    let currentCoordinate;
+    while ((currentCoordinate = queue.shift())) {
+      let currentHeight = topoMap.get(getKey(...currentCoordinate))!;
+      if (currentHeight === 9) {
+        result.add(getKey(...currentCoordinate));
+      } else {
+        for (const neighbour of getNeighbours(currentCoordinate, isInBounds)) {
+          if (topoMap.get(getKey(...neighbour)) === currentHeight + 1) {
+            queue.push(neighbour);
+          }
+        }
       }
-      foundEmptySize++;
-    } else {
-      foundEmptySize = 0;
     }
-    if (foundEmptySize === fileSize) {
-      return foundEmptyIndex;
-    }
-    index++;
-  }
-  return -1;
+    return result.size;
+  };
+  return lowestPoints.reduce(
+    (acc, lowestPoint) => acc + findHowManyHighPointsReachable(lowestPoint),
+    0
+  );
 };
 
 export const part2 = (lines: Array<string>): number => {
-  const line = lines.at(0)!;
-  const { nodes, highestId } = convertDiskMapToIndividualBlocks(line);
-  for (let id = highestId; id >= 0; id--) {
-    let endFileIndex = nodes.findLastIndex((node) => node === id);
-    let startFileIndex = nodes.findIndex((node) => node === id);
-    let fileSize = endFileIndex - startFileIndex + 1;
-    let emptySpaceIndex = findEmptySpace(nodes, fileSize);
-    if (emptySpaceIndex === -1 || emptySpaceIndex >= startFileIndex) {
-      continue;
+  const { topoMap, lowestPoints, isInBounds } = createTopoMap(lines);
+  const findHowManyHighPointsReachable = (
+    startingPoint: Coordinate
+  ): number => {
+    let result = 0;
+    const queue: Array<Coordinate> = [startingPoint];
+    let currentCoordinate;
+    while ((currentCoordinate = queue.shift())) {
+      let currentHeight = topoMap.get(getKey(...currentCoordinate))!;
+      if (currentHeight === 9) {
+        result++;
+      } else {
+        for (const neighbour of getNeighbours(currentCoordinate, isInBounds)) {
+          if (topoMap.get(getKey(...neighbour)) === currentHeight + 1) {
+            queue.push(neighbour);
+          }
+        }
+      }
     }
-    nodes.splice(
-      emptySpaceIndex,
-      fileSize,
-      ...(Array(fileSize).fill(id) as Array<string | number>)
-    );
-    nodes.splice(
-      startFileIndex,
-      fileSize,
-      ...(Array(fileSize).fill(".") as Array<string | number>)
-    );
-  }
-  return calculateChecksum(nodes);
+    return result;
+  };
+  return lowestPoints.reduce(
+    (acc, lowestPoint) => acc + findHowManyHighPointsReachable(lowestPoint),
+    0
+  );
 };
